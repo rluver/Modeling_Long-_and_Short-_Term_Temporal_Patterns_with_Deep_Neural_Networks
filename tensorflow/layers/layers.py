@@ -18,6 +18,7 @@ from tensorflow.keras.layers import Layer, Dense, GRU, Conv1D, Dropout
         **kwargs):
         self.config = ModelConfig
         super(Layer, self).__init__(self, config=kwargs)
+        self.n = None
 
     def call(self, x):
         # Autoregressive
@@ -28,11 +29,12 @@ from tensorflow.keras.layers import Layer, Dense, GRU, Conv1D, Dropout
         # change axis (time, feature) -> (feature, time)
         x = Permute((2, 1))(x)
         x_expanded_dim = tf.expand_dims(x, -1)
+        self.n = x.shape[1]
 
         # Convolutional Layer
         conv_output = Conv2D(
             filters=self.config.num_filters, 
-            kernel_size=(x.shape[1], self.config.window),
+            kernel_size=(self.n, self.config.window),
             padding=self.config.padding,
             activation=self.config.activation
             )(x_expanded_dim)  # 1 x T x d_c
