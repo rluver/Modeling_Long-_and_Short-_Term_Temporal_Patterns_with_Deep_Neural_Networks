@@ -42,11 +42,19 @@ from tensorflow.keras.layers import Layer, Dense, GRU, Conv1D, Dropout
         conv_output = tf.Permute((2, 1))(conv_output)   # d_c x T
         conv_output = Dropout(rate=self.config.dropout_rate)(conv_output)
 
-        # Recurrent and Recurrent-skip layer
-        recurrent_output = GRU(units=self.config.recurrent_units)(conv_output)
-        recurrent_output = Dropout(rates=self.config.dropout_rate)(recurrent_output)
+        # Recurrent
+        recurrent_output = GRU(units=self.config.recurrent_units, activation='relu')(conv_output)
+        recurrent_output = Dropout(rate=self.config.dropout_rate)(recurrent_output)
 
-        recurrent_skip_output = GRU(units=self.config.recurrent_units)(conv_output)
+        # Recurrent-skip layer
+        assert self.config.skip_length > 0
+        conv_output_sliced = conv_output[:, -(self.config.skip_length-1):, :]
+        recurrent_skip_output = GRU(units=self.config.recurrent_skip_units, activation='relu')(conv_output_sliced)
+        recurrent_skip_output = Dropout(rate=self.config.dropout_rate)(recurrent_skip_output)
+
+        # dense layer to combine outputs
+        concat_layer = tf.concat([recurrent_output, recurrent_skip_output], axis=1)
+        dense_layer = Dense(units=self.n)(concat_layer)
 
 
         recurrent_skip_output = GRU(units=self.config.recurrent_skip_units)
