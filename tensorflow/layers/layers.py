@@ -56,10 +56,14 @@ from tensorflow.keras.layers import Layer, Dense, GRU, Conv1D, Dropout
         concat_layer = tf.concat([recurrent_output, recurrent_skip_output], axis=1)
         dense_layer = Dense(units=self.n)(concat_layer)
 
+        # Autoregressive Componenet
+        assert self.config.highway_window > 0
+        y = x[:, :, -self.config.highway_window:]
+        highway_layer = Dense(units=1)(y)
+        ar_output = tf.reshape(highway_layer, shape=(-1, self.n))
 
-        recurrent_skip_output = GRU(units=self.config.recurrent_skip_units)
-
-        # Fully connected and elemen-wise sum output
-
+        # output
+        output = dense_layer + ar_output
         
+        return output
         
