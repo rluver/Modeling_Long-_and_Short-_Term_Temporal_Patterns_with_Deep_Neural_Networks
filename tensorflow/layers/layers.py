@@ -1,8 +1,9 @@
 from ...config.config import ModelConfig
 
-import tensorflow
-from tensorflow.keras.layers import Layer, Dense, GRU, Conv1D, Dropout
+import tensorflow as tf
+from tensorflow.keras.layers import Layer, Dense, GRU, Conv2D, Dropout, RepeatVector, Permute
 
+class LSTLayer(Layer):
     '''
     h: desirable horizon
     n: the variable dimension
@@ -12,19 +13,16 @@ from tensorflow.keras.layers import Layer, Dense, GRU, Conv1D, Dropout
     p: the number of hidden cells skipped through
     h_t^R: hidden state at t
     h_(t-p+1): hiddenstate of recurrent-skip component from t - p + 1
+    q: window for highway
     '''
     def __init__(
         self, 
         **kwargs):
+        super(LSTLayer, self).__init__(self, config=kwargs)
         self.config = ModelConfig
-        super(Layer, self).__init__(self, config=kwargs)
         self.n = None
 
     def call(self, x):
-        # Autoregressive
-        ar_output = GRU(units=self.config.ar_units)(x)
-        ar_output = Dropout(rates=self.config.dropout_rate)(ar_output)
-
         # expand dim
         # change axis (time, feature) -> (feature, time)
         x = Permute((2, 1))(x)
