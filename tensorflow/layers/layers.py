@@ -65,13 +65,12 @@ class LSTLayer(Layer):
         conv_output = Dropout(rate=self.config.dropout_rate)(conv_output)
 
         # Recurrent
-        recurrent_output = GRU(units=self.config.recurrent_units, activation='relu')(conv_output)
+        recurrent_output = GRU(units=self.config.recurrent_units, activation=self.config.activation)(conv_output)
         recurrent_output = Dropout(rate=self.config.dropout_rate)(recurrent_output)
 
         # Recurrent-skip layer
-        assert self.config.skip_length > 0
-        conv_output_sliced = conv_output[:, -(self.config.skip_length-1):, :]
-        recurrent_skip_output = GRU(units=self.config.recurrent_skip_units, activation='relu')(conv_output_sliced)
+        assert self.config.p > 0        
+        recurrent_skip_output = SkipGRU(units=self.config.recurrent_skip_units, activation=self.config.activation)(conv_output)
         recurrent_skip_output = Dropout(rate=self.config.dropout_rate)(recurrent_skip_output)
 
         # dense layer to combine outputs
