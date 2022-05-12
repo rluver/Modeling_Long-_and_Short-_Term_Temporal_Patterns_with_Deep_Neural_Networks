@@ -36,8 +36,7 @@ class LSTLayer(Layer):
             padding=self.config.padding,
             activation=self.config.activation
             )(x_expanded_dim)  # 1 x T x d_c
-        conv_output = tf.reshape(conv_output, shape=(-1, conv_output.shape[-2], conv_output.shape[-1]))  # T_c x d_c
-        conv_output = Permute((2, 1))(conv_output)   # d_c x T
+        conv_output = tf.reshape(conv_output, shape=(-1, conv_output.shape[-2], conv_output.shape[-1]))  # T x d_c
         conv_output = Dropout(rate=self.config.dropout_rate)(conv_output)
 
         # Recurrent
