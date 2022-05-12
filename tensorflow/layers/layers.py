@@ -3,6 +3,31 @@ from ...config.config import ModelConfig
 import tensorflow as tf
 from tensorflow.keras.layers import Layer, Dense, GRU, Conv2D, Dropout, RepeatVector, Permute
 
+class SkipGRU(GRU):
+    def __init__(self, **kwargs):
+        super(SkipGRU, self).__init__(**kwargs)
+        self.initial_state = None
+        self.gru = GRU(units=kwargs.get('units'), return_state=True, activation=kwargs.get('activation'))
+    
+    def call(self, x, training=False):
+        hidden_states = []
+        outputs = []
+
+        for p in range(ModelConfig.p, 0, -1):
+            input_t = x[:, -(p-1), :]
+            input_t = tf.expand_dims(input_t, axis=1)
+            hidden_state, cell_state = self.gru(input_t, initial_state=self.initial_state, training=training)
+            self.initial_state = cell_state
+
+            hidden_states.append(hidden_state)
+            outputs.append(cell_state)
+        
+        outputs = tf.reduce_sum(outputs, axis=0)
+        hidden_states = tf.reduce_sum(hidden_states, axis=0)
+
+        return outputs, hidden_states
+
+
 class LSTLayer(Layer):
     '''
     h: desirable horizon
